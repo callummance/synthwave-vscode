@@ -32,9 +32,7 @@ function activate(context) {
 	let neonBrightness = parsedBrightness;
 
 	let disposable = vscode.commands.registerCommand('synthwave84.enableNeon', function () {
-		const appDir = path.dirname(vscode.env.appRoot);
-		const base = path.join(appDir, 'app', 'out', 'vs', 'code');
-
+		const base = findAppBaseDir();
 		const workbenchPaths = resolveWorkbenchPaths(base);
 		if (!workbenchPaths) {
 			vscode.window.showErrorMessage(messages.ERROR_WORKBENCH_NOT_FOUND);
@@ -178,6 +176,26 @@ function resolveWorkbenchPaths(base) {
 	}
 
 	return null;
+}
+
+// Returns the vscode appRoot directly if it contains `code.mjs` and is called `code`, otherwise returns
+// the parent directory.
+function findAppBaseDir() {
+	const appRoot = vscode.env.appRoot;
+	try {
+		let appRootName = path.basename(appRoot);
+		let appRootFiles = fs.readdirSync(appRoot);
+
+		if (appRootName === "code" && appRootFiles.includes("code.mjs")) {
+			if (appRootFiles.includes("app")  && fs.existsSync(path.join(appRoot, 'app', 'out', 'vs', 'code'))) {
+				return path.join(appRoot,'app','out','vs','code');
+			} else if (appRootFiles.includes("out") && fs.existsSync(path.join(appRoot, 'out', 'vs', 'code'))) {
+				return path.join(appRoot, 'out','vs','code');
+			}
+		}
+	} catch(e) {}
+	const appDir = path.dirname(vscode.env.appRoot);
+	return path.join(appDir,'app','out','vs','code');
 }
 
 module.exports = {
